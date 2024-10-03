@@ -52,7 +52,7 @@
             flex-direction: column;
             gap: 20px;
             padding: 20px;
-            max-width: 800px;
+            max-width: 90%; /* Ajusté pour mobile */
             margin: auto;
         }
 
@@ -84,18 +84,19 @@
             margin: 5px;
         }
 
+        /* Boutons like et dislike, adaptés pour mobile */
         .like-btn {
-            background-color: #ff6347;
+            background-color: #4CAF50; /* Vert pour Like */
             color: white;
         }
 
         .dislike-btn {
-            background-color: #ff6347;
+            background-color: #f44336; /* Rouge pour Dislike */
             color: white;
         }
 
         .like-btn:hover, .dislike-btn:hover {
-            background-color: #ff4500;
+            opacity: 0.8;
         }
 
         .moderator-btn {
@@ -174,10 +175,34 @@
         }
 
         .toggle-description-btn {
-            background-color: transparent;
+            background-color: #4CAF50;
             border: none;
-            color: #4CAF50;
+            color: white;
+            padding: 5px 10px;
+            border-radius: 20px;
+            font-size: 0.9em;
             cursor: pointer;
+            display: none; /* Masqué par défaut */
+        }
+
+        .toggle-description-btn.show {
+            display: inline-block; /* Affiché uniquement si le texte est long */
+        }
+
+        /* Boutons de tri */
+        #sort-recent, #sort-liked {
+            background-color: #8bc34a;
+            color: white;
+            padding: 10px;
+            border-radius: 20px;
+            cursor: pointer;
+            border: none;
+            margin: 10px;
+            font-size: 1em;
+        }
+
+        #sort-recent:hover, #sort-liked:hover {
+            background-color: #7cb342;
         }
 
         #sort-options {
@@ -279,6 +304,9 @@
                 // Gestion de l'affichage complet de la description
                 const toggleBtn = projectElement.querySelector('.toggle-description-btn');
                 const descriptionDiv = projectElement.querySelector('.project-description');
+                if (descriptionDiv.scrollHeight > 100) {
+                    toggleBtn.classList.add('show');
+                }
                 let isExpanded = false;
                 toggleBtn.addEventListener('click', () => {
                     isExpanded = !isExpanded;
