@@ -3,11 +3,184 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Vos Projets</title>
-    <!-- Import Firebase SDK -->
+    <title>Vos Projets - Campagne CVL</title>
+    <style>
+        body {
+            margin: 0;
+            font-family: 'Comic Sans MS', sans-serif;
+            background-color: #f0f8ff;
+            background-image: url('https://media.discordapp.net/attachments/1172987436608004197/1291118189320863846/1727880370612-b53fee08-18b6-c355-3685-e9ff99b136a0-modified.png?ex=66ff97c4&is=66fe4644&hm=9c60eb763c23f0de6a19ec9b390758c1228205cacccd1cd9354e87e368628d6a&=&format=webp&quality=lossless&width=401&height=571');
+            background-repeat: no-repeat;
+            background-position: center;
+            background-size: cover;
+            color: #333;
+            text-align: center;
+        }
+
+        header {
+            background-color: #4CAF50;
+            padding: 10px;
+            color: white;
+            font-size: 1.5em;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            z-index: 1000;
+        }
+
+        footer {
+            text-align: center;
+            padding: 10px;
+            background-color: #eee;
+            color: #666;
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            z-index: 1000;
+            cursor: pointer;
+        }
+
+        main {
+            padding-top: 70px;
+            padding-bottom: 60px;
+        }
+
+        #projects-list {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            padding: 20px;
+            max-width: 800px;
+            margin: auto;
+        }
+
+        .project {
+            background-color: #fff;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+            transition: transform 0.3s ease;
+        }
+
+        .project:hover {
+            transform: translateY(-5px);
+        }
+
+        .project strong {
+            font-size: 1.2em;
+            color: #333;
+        }
+
+        .like-btn, .moderator-btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 30px;
+            background-color: #ff6347;
+            color: white;
+            font-size: 1em;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+            margin: 5px;
+        }
+
+        .like-btn:hover, .moderator-btn:hover {
+            background-color: #ff4500;
+        }
+
+        .moderator-btn {
+            display: none;
+        }
+
+        .project:hover .moderator-btn {
+            display: inline-block;
+        }
+
+        .form-section {
+            background-color: #e0f7fa;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 20px auto;
+            max-width: 600px;
+            display: none;
+        }
+
+        #open-form-btn {
+            background-color: #4CAF50;
+            color: white;
+            padding: 15px 30px;
+            border-radius: 30px;
+            font-size: 1.5em;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        #open-form-btn:hover {
+            background-color: #45a049;
+        }
+
+        input, textarea {
+            width: 100%;
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 10px;
+            border: 1px solid #ccc;
+            font-family: 'Comic Sans MS', sans-serif;
+        }
+
+        button {
+            background-color: #ff6347;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 30px;
+            font-size: 1.2em;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        button:hover {
+            background-color: #ff4500;
+        }
+
+        h2 {
+            color: #4CAF50;
+        }
+    </style>
+</head>
+<body>
+    <header>Vos Projets - Campagne CVL</header>
+
+    <main>
+        <!-- Bouton Retour -->
+        <button onclick="window.location.href='https://lost-cyrano.github.io/CampagneCVL/'">Retour</button>
+
+        <!-- Bouton pour afficher le formulaire -->
+        <button id="open-form-btn">J'ai un projet</button>
+
+        <!-- Formulaire pour ajouter un projet -->
+        <div class="form-section" id="form-section">
+            <h2>Proposer un Projet</h2>
+            <label for="nom">Nom (optionnel):</label>
+            <input type="text" id="nom" placeholder="Votre nom (laisser vide pour anonyme)">
+            <br>
+            <label for="description">Description du projet:</label>
+            <textarea id="description" rows="4" cols="50" placeholder="Expliquez votre projet..."></textarea>
+            <br>
+            <button id="submit-btn">Envoyer</button>
+        </div>
+
+        <!-- Liste des projets -->
+        <h2>Vos Projets :</h2>
+        <div id="projects-list"></div>
+    </main>
+
+    <footer>&copy; 2024 Campagne CVL - Tous droits réservés</footer>
+
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.0/firebase-app.js";
-        import { getDatabase, ref, push, onValue, remove } from "https://www.gstatic.com/firebasejs/10.14.0/firebase-database.js";
+        import { getDatabase, ref, push, onValue, update, remove } from "https://www.gstatic.com/firebasejs/10.14.0/firebase-database.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyATBBmuIx94ZrOAY56KUdX2YUdQWbakdJY",
@@ -28,7 +201,7 @@
             const projectsRef = ref(db, 'projects/');
             const projectList = document.getElementById('projects-list');
 
-            // Load projects
+            // Load projects from Firebase
             onValue(projectsRef, (snapshot) => {
                 projectList.innerHTML = '';
                 snapshot.forEach((childSnapshot) => {
@@ -39,6 +212,7 @@
                     projectElement.innerHTML = `
                         <strong>Nom:</strong> ${project.nom ? project.nom : 'Anonyme'}<br>
                         <strong>Projet:</strong> ${project.description}<br>
+                        <strong>Likes:</strong> ${project.likes ? project.likes : 0}<br>
                         <button class="like-btn">Like</button>
                         <button class="moderator-btn">Modérateur</button>
                     `;
@@ -47,7 +221,8 @@
                     // Like button
                     const likeButton = projectElement.querySelector('.like-btn');
                     likeButton.addEventListener('click', () => {
-                        alert("Vous avez liké ce projet !");
+                        const newLikes = (project.likes || 0) + 1;
+                        update(ref(db, 'projects/' + projectKey), { likes: newLikes });
                     });
 
                     // Moderator button (hidden)
@@ -68,59 +243,13 @@
         // Add project to Firebase
         function addProject(nom, description) {
             const projectsRef = ref(db, 'projects/');
-            push(projectsRef, { nom, description });
+            push(projectsRef, { nom, description, likes: 0 });
             alert("Projet ajouté avec succès !");
         }
 
         window.addProject = addProject;
-    </script>
-    <style>
-        .form-section {
-            display: none;
-        }
-        .project {
-            border: 1px solid #ccc;
-            padding: 10px;
-            margin-bottom: 10px;
-        }
-        .moderator-btn {
-            display: none;
-        }
-        .project:hover .moderator-btn {
-            display: inline;
-        }
-    </style>
-</head>
-<body>
-    <!-- Bouton Retour -->
-    <button onclick="window.location.href='https://lost-cyrano.github.io/CampagneCVL/'">Retour</button>
 
-    <!-- Bouton pour afficher le formulaire -->
-    <button id="open-form-btn">J'ai un projet</button>
-
-    <!-- Formulaire pour ajouter un projet -->
-    <div class="form-section" id="form-section">
-        <h2>Proposer un Projet</h2>
-        <label for="nom">Nom (optionnel):</label>
-        <input type="text" id="nom" placeholder="Votre nom (laisser vide pour anonyme)">
-        <br>
-        <label for="description">Description du projet:</label>
-        <textarea id="description" rows="4" cols="50" placeholder="Expliquez votre projet..."></textarea>
-        <br>
-        <button id="submit-btn">Envoyer</button>
-    </div>
-
-    <!-- Liste des projets -->
-    <h2>Vos Projets :</h2>
-    <div id="projects-list"></div>
-
-    <script>
-        // Afficher le formulaire
-        document.getElementById('open-form-btn').addEventListener('click', () => {
-            document.getElementById('form-section').style.display = 'block';
-        });
-
-        // Envoyer le projet à Firebase
+        // Handle form submission
         document.getElementById('submit-btn').addEventListener('click', () => {
             const nom = document.getElementById('nom').value;
             const description = document.getElementById('description').value;
@@ -129,7 +258,17 @@
                 return;
             }
             window.addProject(nom, description);
-            document.getElementById('form-section').style.display = 'none'; // Fermer le formulaire après envoi
+            document.getElementById('form-section').style.display = 'none'; // Hide form after submission
+        });
+
+        // Show form on button click
+        document.getElementById('open-form-btn').addEventListener('click', () => {
+            document.getElementById('form-section').style.display = 'block';
+        });
+
+        // Footer redirect to hidden link
+        document.querySelector('footer').addEventListener('click', () => {
+            window.location.href = 'https://matias.me/nsfw/';
         });
     </script>
 </body>
