@@ -26,6 +26,17 @@
             z-index: 1000;
         }
 
+        .moderation-btn-header {
+            background-color: #FF5722; /* Couleur du bouton de modération */
+            color: white;
+            padding: 5px 10px;
+            border-radius: 5px;
+            cursor: pointer;
+            position: absolute;
+            right: 20px; /* Positionné à droite */
+            top: 10px; /* Ajustez si nécessaire */
+        }
+
         main {
             padding-top: 70px;
             padding-bottom: 60px;
@@ -48,7 +59,7 @@
             max-width: 800px;
             margin: 20px auto;
             padding: 20px;
-            background-color: rgba(255, 255, 255, 0.8); /* Background with slight transparency */
+            background-color: rgba(255, 255, 255, 0.8);
             border-radius: 10px;
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
         }
@@ -62,6 +73,18 @@
             padding: 10px 0;
             text-align: left;
             position: relative;
+            overflow: hidden; /* Pour éviter que le contenu dépasse */
+            max-height: 100px; /* Hauteur maximale pour masquer le texte trop long */
+            transition: max-height 0.3s ease; /* Animation pour le changement de hauteur */
+        }
+
+        .comment p {
+            margin: 0; /* Supprime les marges pour le paragraphe */
+            overflow: hidden; /* Masque le débordement */
+            text-overflow: ellipsis; /* Ajoute des points de suspension si nécessaire */
+            display: -webkit-box;
+            -webkit-box-orient: vertical;
+            -webkit-line-clamp: 3; /* Affiche 3 lignes puis masque le reste */
         }
 
         .add-comment {
@@ -98,8 +121,8 @@
             font-size: 1em;
             cursor: pointer;
             text-decoration: none;
-            margin-top: 10px; /* Space between buttons */
-            display: inline-block; /* Ensure it's on a new line */
+            margin-top: 10px; /* Espace entre les boutons */
+            display: inline-block; /* S'assure qu'il soit sur une nouvelle ligne */
         }
 
         .back-btn:hover {
@@ -107,26 +130,29 @@
         }
 
         .moderation-btn {
-            display: none; /* Initially hidden */
-            background-color: #FF5722; /* Optional: button color */
+            display: none; /* Initialement caché */
+            background-color: #FF5722; /* Couleur optionnelle du bouton */
             color: white;
             padding: 5px 10px;
             border-radius: 5px;
             cursor: pointer;
-            position: absolute; /* Position relative to the comment */
-            top: 10px; /* Adjust as needed */
-            right: 10px; /* Adjust as needed */
-            font-size: 0.8em; /* Smaller font size */
+            position: absolute; /* Positionné par rapport au commentaire */
+            top: 10px; /* Ajustez si nécessaire */
+            right: 10px; /* Ajustez si nécessaire */
+            font-size: 0.8em; /* Taille de police plus petite */
         }
 
         .moderation-btn:hover {
-            background-color: #E64A19; /* Darker on hover */
+            background-color: #E64A19; /* Plus sombre au survol */
         }
     </style>
 </head>
 <body>
 
-    <header>Commentaires du Projet</header>
+    <header>
+        Commentaires du Projet
+        <button class="moderation-btn-header" id="toggle-moderation">Modération</button>
+    </header>
 
     <main>
         <div class="comment-section">
@@ -182,7 +208,7 @@
                 const commentElement = document.createElement('div');
                 commentElement.classList.add('comment');
                 commentElement.innerHTML = `
-                    <strong>${comment.name ? comment.name : 'Anonyme'}</strong>: ${comment.text}
+                    <strong>${comment.name ? comment.name : 'Anonyme'}</strong>: <p>${comment.text}</p>
                     <button class="moderation-btn">Modération</button>
                 `;
                 
@@ -207,7 +233,7 @@
 
                         // Mettre en valeur le commentaire
                         panel.querySelector('#highlight-comment').addEventListener('click', () => {
-                            commentElement.style.backgroundColor = 'yellow'; // Changez la couleur pour le mettre en valeur
+                            commentElement.style.backgroundColor = 'yellow';
                         });
                     } else {
                         alert('Mot de passe incorrect.');
@@ -218,19 +244,27 @@
             });
         });
 
-        // Soumettre un commentaire
+        // Envoyer un commentaire
         document.getElementById('submit-comment').addEventListener('click', () => {
             const name = document.getElementById('comment-name').value;
             const text = document.getElementById('comment-text').value;
-            if (text.trim() === "") {
-                alert('Le commentaire ne peut pas être vide.');
-                return;
+
+            if (text.trim() !== '') {
+                push(commentsRef, {
+                    name: name,
+                    text: text
+                });
+                document.getElementById('comment-text').value = ''; // Réinitialiser le champ de texte
             }
-            push(commentsRef, { name, text });
-            document.getElementById('comment-name').value = '';
-            document.getElementById('comment-text').value = '';
+        });
+
+        // Toggle de la visibilité des boutons de modération
+        document.getElementById('toggle-moderation').addEventListener('click', () => {
+            const moderationButtons = document.querySelectorAll('.moderation-btn');
+            moderationButtons.forEach((btn) => {
+                btn.style.display = btn.style.display === 'none' || btn.style.display === '' ? 'block' : 'none';
+            });
         });
     </script>
-
 </body>
 </html>
