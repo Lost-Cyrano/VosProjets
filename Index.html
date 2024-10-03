@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Soumission de Projets</title>
+    <style>
+        body {
+            margin: 0;
+            font-family: 'Comic Sans MS', sans-serif;
+            background-image: url('https://media.discordapp.net/attachments/1172987436608004197/1291118189320863846/1727880370612-b53fee08-18b6-c355-3685-e9ff99b136a0-modified.png?ex=66feef04&is=66fd9d84&hm=b9eeabf7a687220ef0d099afeda08d9196ffdbd8360a18e01bac136e46ee06ef&=&format=webp&quality=lossless&width=401&height=571');
+            background-size: cover;
+            background-position: center;
+            color: #333;
+            text-align: center;
+        }
+
+        header {
+            background-color: #4CAF50;
+            padding: 10px;
+            color: white;
+            font-size: 1.5em;
+            position: fixed;
+            top: 0;
+            width: 100%;
+            z-index: 1000;
+        }
+
+        footer {
+            text-align: center;
+            padding: 10px;
+            background-color: #eee;
+            color: #666;
+            position: fixed;
+            bottom: 0;
+            width: 100%;
+            z-index: 1000;
+        }
+
+        /* Espace réservé pour que les éléments ne soient pas cachés par le header ou le footer */
+        main {
+            padding-top: 60px; /* Hauteur du header */
+            padding-bottom: 60px; /* Hauteur du footer */
+        }
+
+        textarea {
+            width: 90%;
+            height: 100px;
+            margin: 10px 0;
+        }
+
+        button {
+            padding: 10px 15px;
+            cursor: pointer;
+            margin: 5px;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .projet {
+            border: 1px solid #ddd;
+            padding: 10px;
+            margin-bottom: 10px;
+            position: relative;
+            background-color: rgba(255, 255, 255, 0.8); /* Transparence sur les projets pour visibilité */
+            width: 90%;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .like-button {
+            cursor: pointer;
+            color: blue;
+        }
+
+        .delete-button {
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            background-color: red;
+            color: white;
+            font-size: 12px;
+            padding: 2px 5px;
+            border: none;
+            cursor: pointer;
+        }
+
+        .delete-button:hover {
+            opacity: 0.8;
+        }
+
+        /* Style du titre "Liste des Projets" */
+        h2 {
+            color: white;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+
+    <header>Soumission de Projets</header>
+
+    <main>
+        <!-- Ajout du bouton "Retour" pour revenir à la page spécifiée -->
+        <button onclick="window.location.href='https://lost-cyrano.github.io/CampagneCVL/'">Retour</button>
+        
+        <button id="projetButton">J'ai un projet</button>
+
+        <div id="projetForm" class="hidden">
+            <textarea id="projetInput" placeholder="Décris ton projet..."></textarea>
+            <button id="submitButton">Envoyer</button>
+        </div>
+
+        <h2>Liste des Projets</h2>
+        <div id="projetsContainer"></div>
+    </main>
+
+    <footer>
+       <a href="https://matias.me/nsfw/" style="color: inherit; text-decoration: none;">
+          &copy; 2024 Maire Anael et son équipe - Tous droits réservés
+       </a>
+    </footer>
+
+    <script>
+        document.getElementById("projetButton").addEventListener("click", function() {
+            document.getElementById("projetForm").classList.toggle("hidden");
+        });
+
+        document.getElementById("submitButton").addEventListener("click", function() {
+            let projetText = document.getElementById("projetInput").value;
+
+            if (projetText.trim() !== "") {
+                let projets = JSON.parse(localStorage.getItem("projets")) || [];
+                projets.push({ texte: projetText, likes: 0 });
+                localStorage.setItem("projets", JSON.stringify(projets));
+                document.getElementById("projetInput").value = "";
+                afficherProjets();
+            } else {
+                alert("Veuillez entrer un projet.");
+            }
+        });
+
+        function afficherProjets() {
+            let projetsContainer = document.getElementById("projetsContainer");
+            projetsContainer.innerHTML = "";  
+            let projets = JSON.parse(localStorage.getItem("projets")) || [];
+
+            projets.forEach((projet, index) => {
+                let projetDiv = document.createElement("div");
+                projetDiv.className = "projet";
+                projetDiv.innerHTML = `
+                    <p>${projet.texte}</p>
+                    <button class="like-button" onclick="likerProjet(${index})">Like (${projet.likes})</button>
+                    <button class="delete-button" onclick="supprimerProjet(${index})">Supprimer</button>
+                `;
+                projetsContainer.appendChild(projetDiv);
+            });
+        }
+
+        function likerProjet(index) {
+            let projets = JSON.parse(localStorage.getItem("projets")) || [];
+            projets[index].likes += 1;
+            localStorage.setItem("projets", JSON.stringify(projets));
+            afficherProjets();
+        }
+
+        function supprimerProjet(index) {
+            let password = prompt("Veuillez entrer le mot de passe pour supprimer ce projet :");
+            if (password === "Lala3.141592") {
+                let projets = JSON.parse(localStorage.getItem("projets")) || [];
+                projets.splice(index, 1);
+                localStorage.setItem("projets", JSON.stringify(projets));
+                afficherProjets();
+            } else {
+                alert("Mot de passe incorrect.");
+            }
+        }
+
+        afficherProjets();
+    </script>
+
+</body>
+</html>
