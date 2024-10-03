@@ -100,6 +100,33 @@
         .back-btn:hover {
             background-color: #0288D1;
         }
+
+        .moderation-btn {
+            background-color: #FFC107;
+            color: white;
+            padding: 5px 10px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-top: 5px;
+        }
+
+        .moderation-btn:hover {
+            background-color: #FFA000;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .deleted {
+            color: red;
+            font-weight: bold;
+        }
+
+        .highlight {
+            background-color: yellow;
+        }
     </style>
 </head>
 <body>
@@ -129,7 +156,7 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.0/firebase-app.js";
-        import { getDatabase, ref, push, onValue } from "https://www.gstatic.com/firebasejs/10.14.0/firebase-database.js";
+        import { getDatabase, ref, push, onValue, update } from "https://www.gstatic.com/firebasejs/10.14.0/firebase-database.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyATBBmuIx94ZrOAY56KUdX2YUdQWbakdJY",
@@ -153,7 +180,6 @@
         }
 
         const commentsRef = ref(db, `projects/${projectId}/comments`);
-        const projectTitleElement = document.getElementById('project-title');
         const commentsList = document.getElementById('comments-list');
 
         // Charger les commentaires
@@ -161,10 +187,12 @@
             commentsList.innerHTML = '';
             snapshot.forEach((childSnapshot) => {
                 const comment = childSnapshot.val();
+                const commentId = childSnapshot.key;
                 const commentElement = document.createElement('div');
                 commentElement.classList.add('comment');
                 commentElement.innerHTML = `
-                    <strong>${comment.name ? comment.name : 'Anonyme'}</strong>: ${comment.text}
+                    <strong>${comment.name ? comment.name : 'Anonyme'}</strong>: <span>${comment.text}</span>
+                    <button class="moderation-btn" onclick="moderateComment('${commentId}')">Modération</button>
                 `;
                 commentsList.appendChild(commentElement);
             });
@@ -182,6 +210,29 @@
             document.getElementById('comment-name').value = '';
             document.getElementById('comment-text').value = '';
         });
+
+        // Fonction pour modérer un commentaire
+        window.moderateComment = function(commentId) {
+            const password = prompt("Veuillez entrer le mot de passe:");
+            if (password === "Lala3.141592") {
+                const action = prompt("Que souhaitez-vous faire ? Tapez 'supprimer' ou 'mettre en valeur':").toLowerCase();
+                if (action === 'supprimer') {
+                    update(ref(db, `projects/${projectId}/comments/${commentId}`), {
+                        name: "Deleted",
+                        text: "Message supprimé par un modérateur"
+                    });
+                } else if (action === 'mettre en valeur') {
+                    update(ref(db, `projects/${projectId}/comments/${commentId}`), {
+                        highlighted: true // Ajout d'une propriété pour la mise en valeur
+                    });
+                } else {
+                    alert("Action non reconnue.");
+                }
+            } else {
+                alert("Mot de passe incorrect.");
+            }
+        };
+
     </script>
 
 </body>
