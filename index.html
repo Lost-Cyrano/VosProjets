@@ -168,7 +168,7 @@
 
         function supprimerProjet(index) {
             let password = prompt("Veuillez entrer le mot de passe pour supprimer ce projet :");
-            if (password === "Lala3.141592") {
+            if (password === "Tu regarde quoi là") {
                 let projets = JSON.parse(localStorage.getItem("projets")) || [];
                 projets.splice(index, 1);
                 localStorage.setItem("projets", JSON.stringify(projets));
