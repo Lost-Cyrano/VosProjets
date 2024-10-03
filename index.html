@@ -62,7 +62,7 @@
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
             padding: 20px;
             transition: transform 0.3s ease;
-            word-wrap: break-word;
+            word-wrap: break-word; /* Pour découper automatiquement les longues lignes */
         }
 
         .project:hover {
@@ -218,6 +218,31 @@
             margin: 5px 0;
             width: 100%;
         }
+
+        .project-description {
+            max-height: 100px;
+            overflow: hidden;
+            transition: max-height 0.3s ease;
+        }
+
+        .expanded {
+            max-height: none;
+        }
+
+        .toggle-description-btn {
+            background-color: #4CAF50;
+            border: none;
+            color: white;
+            padding: 5px 10px;
+            border-radius: 20px;
+            font-size: 0.9em;
+            cursor: pointer;
+            display: none;
+        }
+
+        .toggle-description-btn.show {
+            display: inline-block;
+        }
     </style>
 </head>
 <body>
@@ -275,7 +300,6 @@
             measurementId: "G-VK5K6QRW26"
         };
 
-        // Initialize Firebase
         const app = initializeApp(firebaseConfig);
         const db = getDatabase(app);
         let projectsData = [];
@@ -314,6 +338,7 @@
                 projectElement.innerHTML = `
                     <strong>Nom:</strong> ${project.nom ? project.nom : 'Anonyme'}<br>
                     <div class="project-description">${project.description}</div>
+                    <button class="toggle-description-btn">Afficher plus</button>
                     ${project.favori ? '<span class="badge badge-fav">Favori</span>' : ''}
                     ${project.approuve ? '<span class="badge badge-approve">Approuvé</span>' : ''}
                     <br>
@@ -332,7 +357,29 @@
                 `;
                 projectList.appendChild(projectElement);
 
-                // Like button
+                const descriptionDiv = projectElement.querySelector('.project-description');
+                const toggleBtn = projectElement.querySelector('.toggle-description-btn');
+                const descriptionMaxLength = 100;
+
+                if (descriptionDiv.textContent.length > descriptionMaxLength) {
+                    descriptionDiv.textContent = descriptionDiv.textContent.slice(0, descriptionMaxLength) + '...';
+                    toggleBtn.style.display = 'inline-block';
+                } else {
+                    toggleBtn.style.display = 'none'; // Si la description est courte, cacher le bouton
+                }
+
+                let isExpanded = false;
+                toggleBtn.addEventListener('click', () => {
+                    if (!isExpanded) {
+                        descriptionDiv.textContent = project.description;
+                        toggleBtn.textContent = 'Réduire';
+                    } else {
+                        descriptionDiv.textContent = project.description.slice(0, descriptionMaxLength) + '...';
+                        toggleBtn.textContent = 'Afficher plus';
+                    }
+                    isExpanded = !isExpanded;
+                });
+
                 const likeButton = projectElement.querySelector('.like-btn');
                 if (!hasAlreadyVoted(project.key, 'like')) {
                     likeButton.addEventListener('click', () => {
@@ -344,7 +391,6 @@
                     likeButton.disabled = true; // Désactiver après avoir liké
                 }
 
-                // Dislike button
                 const dislikeButton = projectElement.querySelector('.dislike-btn');
                 if (!hasAlreadyVoted(project.key, 'dislike')) {
                     dislikeButton.addEventListener('click', () => {
@@ -356,39 +402,34 @@
                     dislikeButton.disabled = true; // Désactiver après avoir disliké
                 }
 
-                // Comment button
                 const commentButton = projectElement.querySelector('.comment-btn');
                 commentButton.addEventListener('click', () => {
                     window.location.href = `comments.html?projectId=${project.key}`; // Rediriger vers la page des commentaires
                 });
 
-                // Moderator button
                 const moderatorButton = projectElement.querySelector('.moderator-btn');
                 const actionPanel = projectElement.querySelector('.action-panel');
                 moderatorButton.addEventListener('click', () => {
                     const password = prompt("Entrez le mot de passe :");
                     if (password === "Lala3.141592") {
-                        actionPanel.style.display = 'block'; // Afficher le panel d'action
+                        actionPanel.style.display = 'block'; // Afficher le panel d'action si le mot de passe est correct
                     } else {
                         alert("Mot de passe incorrect.");
                     }
                 });
 
-                // Delete button
                 const deleteButton = projectElement.querySelector('.delete-btn');
                 deleteButton.addEventListener('click', () => {
                     remove(ref(db, 'projects/' + project.key));
                     alert("Projet supprimé.");
                 });
 
-                // Favori button
                 const favButton = projectElement.querySelector('.fav-btn');
                 favButton.addEventListener('click', () => {
                     update(ref(db, 'projects/' + project.key), { favori: true });
                     alert("Le projet est maintenant un favori.");
                 });
 
-                // Approuver button
                 const approveButton = projectElement.querySelector('.approve-btn');
                 approveButton.addEventListener('click', () => {
                     update(ref(db, 'projects/' + project.key), { approuve: true });
