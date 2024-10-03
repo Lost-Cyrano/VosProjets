@@ -138,6 +138,16 @@
         .moderation-btn:hover {
             background-color: #E64A19; /* Plus sombre au survol */
         }
+
+        /* Style pour les commentaires mis en valeur */
+        .highlighted {
+            background-color: rgba(255, 215, 0, 0.5); /* Couleur de fond dorée */
+            font-weight: bold; /* Texte en gras */
+        }
+
+        .highlighted p {
+            color: gold; /* Texte doré */
+        }
     </style>
 </head>
 <body>
@@ -209,6 +219,13 @@
                         <button class="moderation-btn">Modération</button>
                     `;
 
+                    // Applique la mise en valeur si le commentaire est mis en valeur
+                    if (comment.highlighted) {
+                        commentElement.classList.add('highlighted');
+                        commentElement.querySelector('strong').style.color = 'gold';
+                        commentElement.querySelector('p').style.color = 'gold';
+                    }
+
                     // Ajouter la fonctionnalité de modération
                     const moderationButton = commentElement.querySelector('.moderation-btn');
                     moderationButton.addEventListener('click', () => {
@@ -224,21 +241,21 @@
                             // Supprimer le commentaire
                             panel.querySelector('#delete-comment').addEventListener('click', () => {
                                 update(ref(db, `projects/${projectId}/comments/${commentId}`), {
-                                    deleted: true // Marquer le commentaire comme supprimé
+                                    deleted: true
                                 });
                             });
 
                             // Mettre en valeur le commentaire
                             panel.querySelector('#highlight-comment').addEventListener('click', () => {
                                 update(ref(db, `projects/${projectId}/comments/${commentId}`), {
-                                    highlighted: true // Marquer le commentaire comme mis en valeur
+                                    highlighted: true
                                 });
-                                commentElement.style.backgroundColor = 'yellow'; // Appliquer visuellement la mise en valeur
                             });
                         } else {
                             alert('Mot de passe incorrect.');
                         }
                     });
+
                 } else {
                     // Si le commentaire est supprimé, ne pas l'afficher
                     const deletedCommentElement = document.createElement('div');
