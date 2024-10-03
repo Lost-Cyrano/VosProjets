@@ -74,17 +74,10 @@
             text-align: left;
             position: relative;
             overflow: hidden; /* Pour éviter que le contenu dépasse */
-            max-height: 100px; /* Hauteur maximale pour masquer le texte trop long */
-            transition: max-height 0.3s ease; /* Animation pour le changement de hauteur */
         }
 
         .comment p {
             margin: 0; /* Supprime les marges pour le paragraphe */
-            overflow: hidden; /* Masque le débordement */
-            text-overflow: ellipsis; /* Ajoute des points de suspension si nécessaire */
-            display: -webkit-box;
-            -webkit-box-orient: vertical;
-            -webkit-line-clamp: 3; /* Affiche 3 lignes puis masque le reste */
         }
 
         .add-comment {
@@ -174,7 +167,7 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.0/firebase-app.js";
-        import { getDatabase, ref, push, onValue } from "https://www.gstatic.com/firebasejs/10.14.0/firebase-database.js";
+        import { getDatabase, ref, push, onValue, update } from "https://www.gstatic.com/firebasejs/10.14.0/firebase-database.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyATBBmuIx94ZrOAY56KUdX2YUdQWbakdJY",
@@ -204,6 +197,7 @@
         onValue(commentsRef, (snapshot) => {
             commentsList.innerHTML = '';
             snapshot.forEach((childSnapshot) => {
+                const commentId = childSnapshot.key;
                 const comment = childSnapshot.val();
                 const commentElement = document.createElement('div');
                 commentElement.classList.add('comment');
@@ -226,14 +220,17 @@
                         
                         // Supprimer le commentaire
                         panel.querySelector('#delete-comment').addEventListener('click', () => {
-                            commentElement.innerHTML = `
-                                <strong style="color: red;">Deleted</strong>: <span style="color: red;">Message supprimé par un modérateur</span>
-                            `;
+                            update(ref(db, `projects/${projectId}/comments/${commentId}`), {
+                                deleted: true // Marquer le commentaire comme supprimé
+                            });
                         });
 
                         // Mettre en valeur le commentaire
                         panel.querySelector('#highlight-comment').addEventListener('click', () => {
-                            commentElement.style.backgroundColor = 'yellow';
+                            update(ref(db, `projects/${projectId}/comments/${commentId}`), {
+                                highlighted: true // Marquer le commentaire comme mis en valeur
+                            });
+                            commentElement.style.backgroundColor = 'yellow'; // Appliquer visuellement la mise en valeur
                         });
                     } else {
                         alert('Mot de passe incorrect.');
@@ -252,7 +249,9 @@
             if (text.trim() !== '') {
                 push(commentsRef, {
                     name: name,
-                    text: text
+                    text: text,
+                    deleted: false,
+                    highlighted: false
                 });
                 document.getElementById('comment-text').value = ''; // Réinitialiser le champ de texte
             }
@@ -260,10 +259,15 @@
 
         // Toggle de la visibilité des boutons de modération
         document.getElementById('toggle-moderation').addEventListener('click', () => {
-            const moderationButtons = document.querySelectorAll('.moderation-btn');
-            moderationButtons.forEach((btn) => {
-                btn.style.display = btn.style.display === 'none' || btn.style.display === '' ? 'block' : 'none';
-            });
+            const password = prompt('Entrez le mot de passe de modération:');
+            if (password === 'Lala3.141592') {
+                const moderationButtons = document.querySelectorAll('.moderation-btn');
+                moderationButtons.forEach((btn) => {
+                    btn.style.display = btn.style.display === 'none' || btn.style.display === '' ? 'block' : 'none';
+                });
+            } else {
+                alert('Mot de passe incorrect.');
+            }
         });
     </script>
 </body>
