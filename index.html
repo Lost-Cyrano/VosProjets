@@ -3,42 +3,16 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Soumission de Projets</title>
-    <style>
-        body { font-family: Arial, sans-serif; margin: 20px; }
-        .hidden { display: none; }
-        textarea { width: 100%; height: 100px; margin: 10px 0; }
-        button { padding: 10px 15px; cursor: pointer; }
-        .projet { border: 1px solid #ddd; padding: 10px; margin-bottom: 10px; position: relative; }
-        .like-button { cursor: pointer; color: blue; }
-        .delete-button { position: absolute; top: 5px; right: 5px; background-color: red; color: white; font-size: 12px; padding: 2px 5px; border: none; cursor: pointer; }
-        .delete-button:hover { opacity: 0.8; }
-    </style>
-    <!-- Importer les bibliothèques Firebase -->
-    <script src="https://www.gstatic.com/firebasejs/9.12.0/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.12.0/firebase-database.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.12.0/firebase-analytics.js"></script>
-</head>
-<body>
+    <title>Vos Projets</title>
+    <!-- Import Firebase SDK -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.0/firebase-app.js";
+        import { getDatabase, ref, push, onValue, remove } from "https://www.gstatic.com/firebasejs/10.14.0/firebase-database.js";
 
-    <h1>Soumission de Projets</h1>
-    <button id="projetButton">J'ai un projet</button>
-
-    <!-- Formulaire caché au départ -->
-    <div id="projetForm">
-        <textarea id="projetInput" placeholder="Décris ton projet..."></textarea>
-        <button id="submitButton">Envoyer</button>
-    </div>
-
-    <h2>Liste des Projets</h2>
-    <div id="projetsContainer"></div>
-
-    <script>
-        // Configuration de Firebase
         const firebaseConfig = {
             apiKey: "AIzaSyATBBmuIx94ZrOAY56KUdX2YUdQWbakdJY",
             authDomain: "vos-projets.firebaseapp.com",
-            databaseURL: "https://vos-projets-default-rtdb.europe-west1.firebasedatabase.app/",
+            databaseURL: "https://vos-projets-default-rtdb.europe-west1.firebasedatabase.app",
             projectId: "vos-projets",
             storageBucket: "vos-projets.appspot.com",
             messagingSenderId: "12303899246",
@@ -46,96 +20,117 @@
             measurementId: "G-VK5K6QRW26"
         };
 
-        // Initialiser Firebase
-        const app = firebase.initializeApp(firebaseConfig);
-        const analytics = firebase.getAnalytics(app);
-        const database = firebase.database();
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
 
-        // Afficher le formulaire de soumission
-        document.getElementById("projetButton").addEventListener("click", function() {
-            document.getElementById("projetForm").classList.toggle("hidden");
+        window.addEventListener('DOMContentLoaded', (event) => {
+            const projectsRef = ref(db, 'projects/');
+            const projectList = document.getElementById('projects-list');
+
+            // Load projects
+            onValue(projectsRef, (snapshot) => {
+                projectList.innerHTML = '';
+                snapshot.forEach((childSnapshot) => {
+                    const project = childSnapshot.val();
+                    const projectKey = childSnapshot.key;
+                    const projectElement = document.createElement('div');
+                    projectElement.classList.add('project');
+                    projectElement.innerHTML = `
+                        <strong>Nom:</strong> ${project.nom ? project.nom : 'Anonyme'}<br>
+                        <strong>Projet:</strong> ${project.description}<br>
+                        <button class="like-btn">Like</button>
+                        <button class="moderator-btn">Modérateur</button>
+                    `;
+                    projectList.appendChild(projectElement);
+
+                    // Like button
+                    const likeButton = projectElement.querySelector('.like-btn');
+                    likeButton.addEventListener('click', () => {
+                        alert("Vous avez liké ce projet !");
+                    });
+
+                    // Moderator button (hidden)
+                    const moderatorButton = projectElement.querySelector('.moderator-btn');
+                    moderatorButton.addEventListener('click', () => {
+                        const password = prompt("Entrez le mot de passe :");
+                        if (password === "Lala3.141592") {
+                            remove(ref(db, 'projects/' + projectKey));
+                            alert("Projet supprimé.");
+                        } else {
+                            alert("Mot de passe incorrect.");
+                        }
+                    });
+                });
+            });
         });
 
-        // Sauvegarder le projet soumis
-        document.getElementById("submitButton").addEventListener("click", async function() {
-            let projetText = document.getElementById("projetInput").value;
-
-            if (projetText.trim() !== "") {
-                // Ajouter le projet à la Realtime Database
-                let newProjetRef = database.ref("projets").push();
-                await newProjetRef.set({ texte: projetText, likes: 0 });
-                document.getElementById("projetInput").value = "";  // Vider le champ de saisie
-
-                // Réafficher les projets
-                afficherProjets();
-            } else {
-                alert("Veuillez entrer un projet.");
-            }
-        });
-
-        // Fonction pour afficher la liste des projets
-        async function afficherProjets() {
-            let projetsContainer = document.getElementById("projetsContainer");
-            projetsContainer.innerHTML = "";  // Réinitialiser la liste
-
-            // Charger les projets depuis la Realtime Database
-            const projetsSnapshot = await database.ref("projets").once("value");
-            const projets = projetsSnapshot.val();
-
-            // Convertir les projets en tableau et les trier par likes
-            let projetsArray = [];
-            for (const key in projets) {
-                projetsArray.push({ id: key, ...projets[key] });
-            }
-            projetsArray.sort((a, b) => b.likes - a.likes); // Tri décroissant
-
-            // Afficher chaque projet
-            projetsArray.forEach(projet => {
-                let projetDiv = document.createElement("div");
-                projetDiv.className = "projet";
-                projetDiv.innerHTML = `
-                    <p>${projet.texte}</p>
-                    <button class="like-button" onclick="likerProjet('${projet.id}')">Like (${projet.likes})</button>
-                    <button class="delete-button" onclick="supprimerProjet('${projet.id}')">Supprimer</button>
-                `;
-                projetsContainer.appendChild(projetDiv);
-            });
+        // Add project to Firebase
+        function addProject(nom, description) {
+            const projectsRef = ref(db, 'projects/');
+            push(projectsRef, { nom, description });
+            alert("Projet ajouté avec succès !");
         }
 
-        // Fonction pour liker un projet
-        async function likerProjet(docId) {
-            // Récupérer le projet dans la Realtime Database
-            let projetRef = database.ref("projets/" + docId);
-            await projetRef.transaction(projet => {
-                if (projet) {
-                    projet.likes = (projet.likes || 0) + 1;
-                }
-                return projet;
-            });
-
-            // Réafficher les projets mis à jour
-            afficherProjets();
-        }
-
-        // Fonction pour supprimer un projet
-        async function supprimerProjet(docId) {
-            // Demander le mot de passe
-            let password = prompt("Veuillez entrer le mot de passe pour supprimer ce projet :");
-
-            // Vérifier si le mot de passe est correct
-            if (password === "Lala3.141592") {
-                // Supprimer le projet de la Realtime Database
-                await database.ref("projets/" + docId).remove();
-                // Réafficher les projets mis à jour
-                afficherProjets();
-            } else {
-                alert("Mot de passe incorrect.");
-            }
-        }
-
-        // Charger les projets dès l'ouverture de la page
-        afficherProjets();
+        window.addProject = addProject;
     </script>
+    <style>
+        .form-section {
+            display: none;
+        }
+        .project {
+            border: 1px solid #ccc;
+            padding: 10px;
+            margin-bottom: 10px;
+        }
+        .moderator-btn {
+            display: none;
+        }
+        .project:hover .moderator-btn {
+            display: inline;
+        }
+    </style>
+</head>
+<body>
+    <!-- Bouton Retour -->
+    <button onclick="window.location.href='https://lost-cyrano.github.io/CampagneCVL/'">Retour</button>
 
+    <!-- Bouton pour afficher le formulaire -->
+    <button id="open-form-btn">J'ai un projet</button>
+
+    <!-- Formulaire pour ajouter un projet -->
+    <div class="form-section" id="form-section">
+        <h2>Proposer un Projet</h2>
+        <label for="nom">Nom (optionnel):</label>
+        <input type="text" id="nom" placeholder="Votre nom (laisser vide pour anonyme)">
+        <br>
+        <label for="description">Description du projet:</label>
+        <textarea id="description" rows="4" cols="50" placeholder="Expliquez votre projet..."></textarea>
+        <br>
+        <button id="submit-btn">Envoyer</button>
+    </div>
+
+    <!-- Liste des projets -->
+    <h2>Vos Projets :</h2>
+    <div id="projects-list"></div>
+
+    <script>
+        // Afficher le formulaire
+        document.getElementById('open-form-btn').addEventListener('click', () => {
+            document.getElementById('form-section').style.display = 'block';
+        });
+
+        // Envoyer le projet à Firebase
+        document.getElementById('submit-btn').addEventListener('click', () => {
+            const nom = document.getElementById('nom').value;
+            const description = document.getElementById('description').value;
+            if (description.trim() === "") {
+                alert("Veuillez ajouter une description du projet.");
+                return;
+            }
+            window.addProject(nom, description);
+            document.getElementById('form-section').style.display = 'none'; // Fermer le formulaire après envoi
+        });
+    </script>
 </body>
 </html>
