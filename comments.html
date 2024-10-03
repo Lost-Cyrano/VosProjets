@@ -141,7 +141,6 @@
 
         /* Style pour les commentaires mis en valeur */
         .highlighted {
-            background-color: rgba(255, 215, 0, 0.5); /* Couleur de fond dorée */
             font-weight: bold; /* Texte en gras */
         }
 
@@ -278,15 +277,26 @@
         });
 
         // Toggle de la visibilité des boutons de modération
+        let moderationVisible = false;
+
         document.getElementById('toggle-moderation').addEventListener('click', () => {
-            const password = prompt('Entrez le mot de passe de modération:');
-            if (password === 'Lala3.141592') {
+            if (!moderationVisible) {
+                const password = prompt('Entrez le mot de passe de modération:');
+                if (password === 'Lala3.141592') {
+                    const moderationButtons = document.querySelectorAll('.moderation-btn');
+                    moderationButtons.forEach((btn) => {
+                        btn.style.display = 'block'; // Afficher les boutons de modération
+                    });
+                    moderationVisible = true;
+                } else {
+                    alert('Mot de passe incorrect.');
+                }
+            } else {
                 const moderationButtons = document.querySelectorAll('.moderation-btn');
                 moderationButtons.forEach((btn) => {
-                    btn.style.display = btn.style.display === 'none' || btn.style.display === '' ? 'block' : 'none';
+                    btn.style.display = 'none'; // Cacher les boutons de modération
                 });
-            } else {
-                alert('Mot de passe incorrect.');
+                moderationVisible = false;
             }
         });
     </script>
