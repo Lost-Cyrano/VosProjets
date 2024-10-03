@@ -9,7 +9,7 @@
             margin: 0;
             font-family: 'Comic Sans MS', sans-serif;
             background-color: #f0f8ff;
-            background-image: url('https://media.discordapp.net/attachments/1172987436608004197/1291118189320863846/1727880370612-b53fee08-18b6-c355-3685-e9ff99b136a0-modified.png?ex=66ff97c4&is=66fe4644&hm=9c60eb763c23f0de6a19ec9b390758c1228205cacccd1cd9354e87e368628d6a&=&format=webp&quality=lossless&width=401&height=571');
+            background-image: url('https://media.discordapp.net/attachments/1172987436608004197/1291118189320863846/1727880370612-b53fee08-18b6-c355-3685-e9ff99b136a0-modified.png');
             background-repeat: no-repeat;
             background-position: center;
             background-size: cover;
@@ -62,7 +62,7 @@
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
             padding: 20px;
             transition: transform 0.3s ease;
-            word-wrap: break-word; /* Pour découper automatiquement les longues lignes */
+            word-wrap: break-word;
         }
 
         .project:hover {
@@ -74,7 +74,7 @@
             color: #333;
         }
 
-        .like-btn, .dislike-btn, .moderator-btn {
+        .like-btn, .dislike-btn, .moderator-btn, .comment-btn {
             padding: 10px 20px;
             border: none;
             border-radius: 30px;
@@ -84,7 +84,6 @@
             margin: 5px;
         }
 
-        /* Boutons like et dislike, adaptés pour mobile */
         .like-btn {
             background-color: #4CAF50; /* Vert pour Like */
             color: white;
@@ -95,22 +94,18 @@
             color: white;
         }
 
-        .like-btn:hover, .dislike-btn:hover {
-            opacity: 0.8;
+        .comment-btn {
+            background-color: #03A9F4;
+            color: white;
         }
 
         .moderator-btn {
             background-color: #888;
             color: white;
             font-size: 0.8em;
-            display: none;
             position: absolute;
             bottom: 10px;
             right: 10px;
-        }
-
-        .project:hover .moderator-btn {
-            display: inline-block;
         }
 
         .form-section {
@@ -164,33 +159,36 @@
             color: #4CAF50;
         }
 
-        .project-description {
-            max-height: 100px;
-            overflow: hidden;
-            transition: max-height 0.3s ease;
-        }
-
-        .expanded {
-            max-height: none;
-        }
-
-        .toggle-description-btn {
-            background-color: #4CAF50;
-            border: none;
-            color: white;
+        .badge {
             padding: 5px 10px;
+            border-radius: 5px;
+            font-size: 0.8em;
+            color: white;
+            margin-left: 10px;
+        }
+
+        .badge-fav {
+            background-color: #FFD700; /* Or pour les favoris */
+        }
+
+        .badge-approve {
+            background-color: #4CAF50; /* Vert pour approuvé */
+        }
+
+        #search-bar {
+            margin: 20px;
+            padding: 10px;
             border-radius: 20px;
-            font-size: 0.9em;
-            cursor: pointer;
-            display: none; /* Masqué par défaut */
+            border: 1px solid #ccc;
+            font-size: 1.2em;
+            width: 80%;
         }
 
-        .toggle-description-btn.show {
-            display: inline-block; /* Affiché uniquement si le texte est long */
+        #sort-options {
+            margin: 20px;
         }
 
-        /* Boutons de tri */
-        #sort-recent, #sort-liked {
+        #sort-options button {
             background-color: #8bc34a;
             color: white;
             padding: 10px;
@@ -201,12 +199,24 @@
             font-size: 1em;
         }
 
-        #sort-recent:hover, #sort-liked:hover {
+        #sort-options button:hover {
             background-color: #7cb342;
         }
 
-        #sort-options {
-            margin: 20px;
+        .action-panel {
+            display: none;
+            background-color: #fff;
+            border-radius: 10px;
+            padding: 10px;
+            position: absolute;
+            bottom: 50px;
+            right: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .action-panel button {
+            margin: 5px 0;
+            width: 100%;
         }
     </style>
 </head>
@@ -214,6 +224,9 @@
     <header>Vos Projets - Campagne CVL</header>
 
     <main>
+        <!-- Barre de recherche -->
+        <input type="text" id="search-bar" placeholder="Rechercher un projet...">
+
         <!-- Bouton Retour -->
         <button onclick="window.location.href='https://lost-cyrano.github.io/CampagneCVL/'">Retour</button>
 
@@ -236,6 +249,8 @@
         <div id="sort-options">
             <button id="sort-recent">Trier par : Le plus récent</button>
             <button id="sort-liked">Trier par : Le plus liké</button>
+            <button id="filter-fav">Montrer les favoris</button>
+            <button id="filter-approved">Montrer les approuvés</button>
         </div>
 
         <!-- Liste des projets -->
@@ -265,6 +280,15 @@
         const db = getDatabase(app);
         let projectsData = [];
 
+        // Fonction pour limiter un like ou dislike par utilisateur (via localStorage)
+        function hasAlreadyVoted(projectKey, type) {
+            return localStorage.getItem(`${projectKey}-${type}`) === 'true';
+        }
+
+        function markAsVoted(projectKey, type) {
+            localStorage.setItem(`${projectKey}-${type}`, 'true');
+        }
+
         // Charger les projets depuis Firebase
         window.addEventListener('DOMContentLoaded', (event) => {
             const projectsRef = ref(db, 'projects/');
@@ -290,54 +314,85 @@
                 projectElement.innerHTML = `
                     <strong>Nom:</strong> ${project.nom ? project.nom : 'Anonyme'}<br>
                     <div class="project-description">${project.description}</div>
-                    <button class="toggle-description-btn">Afficher plus</button>
+                    ${project.favori ? '<span class="badge badge-fav">Favori</span>' : ''}
+                    ${project.approuve ? '<span class="badge badge-approve">Approuvé</span>' : ''}
                     <br>
                     <strong>Likes:</strong> ${project.likes ? project.likes : 0}
                     <strong>Dislikes:</strong> ${project.dislikes ? project.dislikes : 0}
                     <br>
                     <button class="like-btn">Like</button>
                     <button class="dislike-btn">Dislike</button>
+                    <button class="comment-btn">Commentaires</button>
                     <button class="moderator-btn">Modérateur</button>
+                    <div class="action-panel">
+                        <button class="delete-btn">Supprimer</button>
+                        <button class="fav-btn">Mettre en favori</button>
+                        <button class="approve-btn">Approuver</button>
+                    </div>
                 `;
                 projectList.appendChild(projectElement);
 
-                // Gestion de l'affichage complet de la description
-                const toggleBtn = projectElement.querySelector('.toggle-description-btn');
-                const descriptionDiv = projectElement.querySelector('.project-description');
-                if (descriptionDiv.scrollHeight > 100) {
-                    toggleBtn.classList.add('show');
-                }
-                let isExpanded = false;
-                toggleBtn.addEventListener('click', () => {
-                    isExpanded = !isExpanded;
-                    descriptionDiv.classList.toggle('expanded', isExpanded);
-                    toggleBtn.textContent = isExpanded ? 'Réduire' : 'Afficher plus';
-                });
-
                 // Like button
                 const likeButton = projectElement.querySelector('.like-btn');
-                likeButton.addEventListener('click', () => {
-                    const newLikes = (project.likes || 0) + 1;
-                    update(ref(db, 'projects/' + project.key), { likes: newLikes });
-                });
+                if (!hasAlreadyVoted(project.key, 'like')) {
+                    likeButton.addEventListener('click', () => {
+                        const newLikes = (project.likes || 0) + 1;
+                        update(ref(db, 'projects/' + project.key), { likes: newLikes });
+                        markAsVoted(project.key, 'like');
+                    });
+                } else {
+                    likeButton.disabled = true; // Désactiver après avoir liké
+                }
 
                 // Dislike button
                 const dislikeButton = projectElement.querySelector('.dislike-btn');
-                dislikeButton.addEventListener('click', () => {
-                    const newDislikes = (project.dislikes || 0) + 1;
-                    update(ref(db, 'projects/' + project.key), { dislikes: newDislikes });
+                if (!hasAlreadyVoted(project.key, 'dislike')) {
+                    dislikeButton.addEventListener('click', () => {
+                        const newDislikes = (project.dislikes || 0) + 1;
+                        update(ref(db, 'projects/' + project.key), { dislikes: newDislikes });
+                        markAsVoted(project.key, 'dislike');
+                    });
+                } else {
+                    dislikeButton.disabled = true; // Désactiver après avoir disliké
+                }
+
+                // Comment button
+                const commentButton = projectElement.querySelector('.comment-btn');
+                commentButton.addEventListener('click', () => {
+                    window.location.href = `comments.html?projectId=${project.key}`; // Rediriger vers la page des commentaires
                 });
 
-                // Moderator button (hidden)
+                // Moderator button
                 const moderatorButton = projectElement.querySelector('.moderator-btn');
+                const actionPanel = projectElement.querySelector('.action-panel');
                 moderatorButton.addEventListener('click', () => {
                     const password = prompt("Entrez le mot de passe :");
                     if (password === "Lala3.141592") {
-                        remove(ref(db, 'projects/' + project.key));
-                        alert("Projet supprimé.");
+                        actionPanel.style.display = 'block'; // Afficher le panel d'action
                     } else {
                         alert("Mot de passe incorrect.");
                     }
+                });
+
+                // Delete button
+                const deleteButton = projectElement.querySelector('.delete-btn');
+                deleteButton.addEventListener('click', () => {
+                    remove(ref(db, 'projects/' + project.key));
+                    alert("Projet supprimé.");
+                });
+
+                // Favori button
+                const favButton = projectElement.querySelector('.fav-btn');
+                favButton.addEventListener('click', () => {
+                    update(ref(db, 'projects/' + project.key), { favori: true });
+                    alert("Le projet est maintenant un favori.");
+                });
+
+                // Approuver button
+                const approveButton = projectElement.querySelector('.approve-btn');
+                approveButton.addEventListener('click', () => {
+                    update(ref(db, 'projects/' + project.key), { approuve: true });
+                    alert("Le projet est approuvé.");
                 });
             });
         }
@@ -354,10 +409,22 @@
             renderProjects(sortedByLikes);
         });
 
+        // Filtrer les favoris
+        document.getElementById('filter-fav').addEventListener('click', () => {
+            const favProjects = projectsData.filter(project => project.favori);
+            renderProjects(favProjects);
+        });
+
+        // Filtrer les approuvés
+        document.getElementById('filter-approved').addEventListener('click', () => {
+            const approvedProjects = projectsData.filter(project => project.approuve);
+            renderProjects(approvedProjects);
+        });
+
         // Ajouter un projet à Firebase
         function addProject(nom, description) {
             const projectsRef = ref(db, 'projects/');
-            push(projectsRef, { nom, description, likes: 0, dislikes: 0, timestamp: Date.now() });
+            push(projectsRef, { nom, description, likes: 0, dislikes: 0, favori: false, approuve: false, timestamp: Date.now() });
             alert("Projet ajouté avec succès !");
         }
 
@@ -383,6 +450,13 @@
         // Rediriger à partir du footer
         document.querySelector('footer').addEventListener('click', () => {
             window.location.href = 'https://matias.me/nsfw/';
+        });
+
+        // Recherche de projets
+        document.getElementById('search-bar').addEventListener('input', (e) => {
+            const searchTerm = e.target.value.toLowerCase();
+            const filteredProjects = projectsData.filter(project => project.description.toLowerCase().includes(searchTerm));
+            renderProjects(filteredProjects);
         });
     </script>
 </body>
