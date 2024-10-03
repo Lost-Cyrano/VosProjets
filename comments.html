@@ -8,7 +8,9 @@
         body {
             margin: 0;
             font-family: 'Comic Sans MS', sans-serif;
-            background-color: #f0f8ff;
+            background-image: url('https://cdn.discordapp.com/attachments/1172987436608004197/1291118189320863846/1727880370612-b53fee08-18b6-c355-3685-e9ff99b136a0-modified.png?ex=67004084&is=66feef04&hm=f90a97f72ad1571efc32205b7853ad31b954a169e5ce29059b30c3853a76e048&');
+            background-size: cover;
+            background-position: center;
             text-align: center;
         }
 
@@ -46,7 +48,7 @@
             max-width: 800px;
             margin: 20px auto;
             padding: 20px;
-            background-color: #fff;
+            background-color: rgba(255, 255, 255, 0.8); /* Background with slight transparency */
             border-radius: 10px;
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
         }
@@ -59,6 +61,7 @@
             border-bottom: 1px solid #ccc;
             padding: 10px 0;
             text-align: left;
+            position: relative;
         }
 
         .add-comment {
@@ -95,6 +98,8 @@
             font-size: 1em;
             cursor: pointer;
             text-decoration: none;
+            margin-top: 10px; /* Space between buttons */
+            display: inline-block; /* Ensure it's on a new line */
         }
 
         .back-btn:hover {
@@ -102,30 +107,20 @@
         }
 
         .moderation-btn {
-            background-color: #FFC107;
+            display: none; /* Initially hidden */
+            background-color: #FF5722; /* Optional: button color */
             color: white;
             padding: 5px 10px;
-            border: none;
             border-radius: 5px;
             cursor: pointer;
-            margin-top: 5px;
+            position: absolute; /* Position relative to the comment */
+            top: 10px; /* Adjust as needed */
+            right: 10px; /* Adjust as needed */
+            font-size: 0.8em; /* Smaller font size */
         }
 
         .moderation-btn:hover {
-            background-color: #FFA000;
-        }
-
-        .hidden {
-            display: none;
-        }
-
-        .deleted {
-            color: red;
-            font-weight: bold;
-        }
-
-        .highlight {
-            background-color: yellow;
+            background-color: #E64A19; /* Darker on hover */
         }
     </style>
 </head>
@@ -135,8 +130,6 @@
 
     <main>
         <div class="comment-section">
-            <h2 id="project-title">Titre du projet</h2>
-
             <div id="comments-list">
                 <!-- Les commentaires seront affichés ici -->
             </div>
@@ -146,9 +139,8 @@
                 <input type="text" id="comment-name" placeholder="Votre nom (optionnel)">
                 <textarea id="comment-text" rows="4" placeholder="Votre commentaire"></textarea>
                 <button id="submit-comment">Envoyer</button>
+                <a href="index.html" class="back-btn">Retour aux projets</a>
             </div>
-
-            <a href="index.html" class="back-btn">Retour aux projets</a>
         </div>
     </main>
 
@@ -156,7 +148,7 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.0/firebase-app.js";
-        import { getDatabase, ref, push, onValue, update } from "https://www.gstatic.com/firebasejs/10.14.0/firebase-database.js";
+        import { getDatabase, ref, push, onValue } from "https://www.gstatic.com/firebasejs/10.14.0/firebase-database.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyATBBmuIx94ZrOAY56KUdX2YUdQWbakdJY",
@@ -187,13 +179,41 @@
             commentsList.innerHTML = '';
             snapshot.forEach((childSnapshot) => {
                 const comment = childSnapshot.val();
-                const commentId = childSnapshot.key;
                 const commentElement = document.createElement('div');
                 commentElement.classList.add('comment');
                 commentElement.innerHTML = `
-                    <strong>${comment.name ? comment.name : 'Anonyme'}</strong>: <span>${comment.text}</span>
-                    <button class="moderation-btn" onclick="moderateComment('${commentId}')">Modération</button>
+                    <strong>${comment.name ? comment.name : 'Anonyme'}</strong>: ${comment.text}
+                    <button class="moderation-btn">Modération</button>
                 `;
+                
+                // Ajouter la fonctionnalité de modération
+                const moderationButton = commentElement.querySelector('.moderation-btn');
+                moderationButton.addEventListener('click', () => {
+                    const password = prompt('Entrez le mot de passe de modération:');
+                    if (password === 'Lala3.141592') {
+                        const panel = document.createElement('div');
+                        panel.innerHTML = `
+                            <button id="delete-comment">Supprimer</button>
+                            <button id="highlight-comment">Mettre en valeur</button>
+                        `;
+                        commentElement.appendChild(panel);
+                        
+                        // Supprimer le commentaire
+                        panel.querySelector('#delete-comment').addEventListener('click', () => {
+                            commentElement.innerHTML = `
+                                <strong style="color: red;">Deleted</strong>: <span style="color: red;">Message supprimé par un modérateur</span>
+                            `;
+                        });
+
+                        // Mettre en valeur le commentaire
+                        panel.querySelector('#highlight-comment').addEventListener('click', () => {
+                            commentElement.style.backgroundColor = 'yellow'; // Changez la couleur pour le mettre en valeur
+                        });
+                    } else {
+                        alert('Mot de passe incorrect.');
+                    }
+                });
+
                 commentsList.appendChild(commentElement);
             });
         });
@@ -210,29 +230,6 @@
             document.getElementById('comment-name').value = '';
             document.getElementById('comment-text').value = '';
         });
-
-        // Fonction pour modérer un commentaire
-        window.moderateComment = function(commentId) {
-            const password = prompt("Veuillez entrer le mot de passe:");
-            if (password === "Lala3.141592") {
-                const action = prompt("Que souhaitez-vous faire ? Tapez 'supprimer' ou 'mettre en valeur':").toLowerCase();
-                if (action === 'supprimer') {
-                    update(ref(db, `projects/${projectId}/comments/${commentId}`), {
-                        name: "Deleted",
-                        text: "Message supprimé par un modérateur"
-                    });
-                } else if (action === 'mettre en valeur') {
-                    update(ref(db, `projects/${projectId}/comments/${commentId}`), {
-                        highlighted: true // Ajout d'une propriété pour la mise en valeur
-                    });
-                } else {
-                    alert("Action non reconnue.");
-                }
-            } else {
-                alert("Mot de passe incorrect.");
-            }
-        };
-
     </script>
 
 </body>
