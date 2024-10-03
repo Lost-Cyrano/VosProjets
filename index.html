@@ -62,6 +62,7 @@
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
             padding: 20px;
             transition: transform 0.3s ease;
+            word-wrap: break-word; /* Pour découper automatiquement les longues lignes */
         }
 
         .project:hover {
@@ -73,24 +74,38 @@
             color: #333;
         }
 
-        .like-btn, .moderator-btn {
+        .like-btn, .dislike-btn, .moderator-btn {
             padding: 10px 20px;
             border: none;
             border-radius: 30px;
-            background-color: #ff6347;
-            color: white;
             font-size: 1em;
             cursor: pointer;
             transition: background-color 0.3s ease;
             margin: 5px;
         }
 
-        .like-btn:hover, .moderator-btn:hover {
+        .like-btn {
+            background-color: #ff6347;
+            color: white;
+        }
+
+        .dislike-btn {
+            background-color: #ff6347;
+            color: white;
+        }
+
+        .like-btn:hover, .dislike-btn:hover {
             background-color: #ff4500;
         }
 
         .moderator-btn {
+            background-color: #888;
+            color: white;
+            font-size: 0.8em;
             display: none;
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
         }
 
         .project:hover .moderator-btn {
@@ -147,6 +162,27 @@
         h2 {
             color: #4CAF50;
         }
+
+        .project-description {
+            max-height: 100px;
+            overflow: hidden;
+            transition: max-height 0.3s ease;
+        }
+
+        .expanded {
+            max-height: none;
+        }
+
+        .toggle-description-btn {
+            background-color: transparent;
+            border: none;
+            color: #4CAF50;
+            cursor: pointer;
+        }
+
+        #sort-options {
+            margin: 20px;
+        }
     </style>
 </head>
 <body>
@@ -169,6 +205,12 @@
             <textarea id="description" rows="4" cols="50" placeholder="Expliquez votre projet..."></textarea>
             <br>
             <button id="submit-btn">Envoyer</button>
+        </div>
+
+        <!-- Options de tri -->
+        <div id="sort-options">
+            <button id="sort-recent">Trier par : Le plus récent</button>
+            <button id="sort-liked">Trier par : Le plus liké</button>
         </div>
 
         <!-- Liste des projets -->
@@ -196,60 +238,104 @@
         // Initialize Firebase
         const app = initializeApp(firebaseConfig);
         const db = getDatabase(app);
+        let projectsData = [];
 
+        // Charger les projets depuis Firebase
         window.addEventListener('DOMContentLoaded', (event) => {
             const projectsRef = ref(db, 'projects/');
             const projectList = document.getElementById('projects-list');
 
-            // Load projects from Firebase
             onValue(projectsRef, (snapshot) => {
-                projectList.innerHTML = '';
+                projectsData = [];
                 snapshot.forEach((childSnapshot) => {
-                    const project = childSnapshot.val();
-                    const projectKey = childSnapshot.key;
-                    const projectElement = document.createElement('div');
-                    projectElement.classList.add('project');
-                    projectElement.innerHTML = `
-                        <strong>Nom:</strong> ${project.nom ? project.nom : 'Anonyme'}<br>
-                        <strong>Projet:</strong> ${project.description}<br>
-                        <strong>Likes:</strong> ${project.likes ? project.likes : 0}<br>
-                        <button class="like-btn">Like</button>
-                        <button class="moderator-btn">Modérateur</button>
-                    `;
-                    projectList.appendChild(projectElement);
-
-                    // Like button
-                    const likeButton = projectElement.querySelector('.like-btn');
-                    likeButton.addEventListener('click', () => {
-                        const newLikes = (project.likes || 0) + 1;
-                        update(ref(db, 'projects/' + projectKey), { likes: newLikes });
-                    });
-
-                    // Moderator button (hidden)
-                    const moderatorButton = projectElement.querySelector('.moderator-btn');
-                    moderatorButton.addEventListener('click', () => {
-                        const password = prompt("Entrez le mot de passe :");
-                        if (password === "Lala3.141592") {
-                            remove(ref(db, 'projects/' + projectKey));
-                            alert("Projet supprimé.");
-                        } else {
-                            alert("Mot de passe incorrect.");
-                        }
-                    });
+                    const project = { ...childSnapshot.val(), key: childSnapshot.key };
+                    projectsData.push(project);
                 });
+                renderProjects(projectsData);
             });
         });
 
-        // Add project to Firebase
+        // Fonction pour afficher les projets
+        function renderProjects(projects) {
+            const projectList = document.getElementById('projects-list');
+            projectList.innerHTML = '';
+            projects.forEach((project) => {
+                const projectElement = document.createElement('div');
+                projectElement.classList.add('project');
+                projectElement.innerHTML = `
+                    <strong>Nom:</strong> ${project.nom ? project.nom : 'Anonyme'}<br>
+                    <div class="project-description">${project.description}</div>
+                    <button class="toggle-description-btn">Afficher plus</button>
+                    <br>
+                    <strong>Likes:</strong> ${project.likes ? project.likes : 0}
+                    <strong>Dislikes:</strong> ${project.dislikes ? project.dislikes : 0}
+                    <br>
+                    <button class="like-btn">Like</button>
+                    <button class="dislike-btn">Dislike</button>
+                    <button class="moderator-btn">Modérateur</button>
+                `;
+                projectList.appendChild(projectElement);
+
+                // Gestion de l'affichage complet de la description
+                const toggleBtn = projectElement.querySelector('.toggle-description-btn');
+                const descriptionDiv = projectElement.querySelector('.project-description');
+                let isExpanded = false;
+                toggleBtn.addEventListener('click', () => {
+                    isExpanded = !isExpanded;
+                    descriptionDiv.classList.toggle('expanded', isExpanded);
+                    toggleBtn.textContent = isExpanded ? 'Réduire' : 'Afficher plus';
+                });
+
+                // Like button
+                const likeButton = projectElement.querySelector('.like-btn');
+                likeButton.addEventListener('click', () => {
+                    const newLikes = (project.likes || 0) + 1;
+                    update(ref(db, 'projects/' + project.key), { likes: newLikes });
+                });
+
+                // Dislike button
+                const dislikeButton = projectElement.querySelector('.dislike-btn');
+                dislikeButton.addEventListener('click', () => {
+                    const newDislikes = (project.dislikes || 0) + 1;
+                    update(ref(db, 'projects/' + project.key), { dislikes: newDislikes });
+                });
+
+                // Moderator button (hidden)
+                const moderatorButton = projectElement.querySelector('.moderator-btn');
+                moderatorButton.addEventListener('click', () => {
+                    const password = prompt("Entrez le mot de passe :");
+                    if (password === "Lala3.141592") {
+                        remove(ref(db, 'projects/' + project.key));
+                        alert("Projet supprimé.");
+                    } else {
+                        alert("Mot de passe incorrect.");
+                    }
+                });
+            });
+        }
+
+        // Trier par plus récent
+        document.getElementById('sort-recent').addEventListener('click', () => {
+            const sortedByRecent = projectsData.sort((a, b) => b.timestamp - a.timestamp);
+            renderProjects(sortedByRecent);
+        });
+
+        // Trier par plus liké
+        document.getElementById('sort-liked').addEventListener('click', () => {
+            const sortedByLikes = projectsData.sort((a, b) => (b.likes || 0) - (a.likes || 0));
+            renderProjects(sortedByLikes);
+        });
+
+        // Ajouter un projet à Firebase
         function addProject(nom, description) {
             const projectsRef = ref(db, 'projects/');
-            push(projectsRef, { nom, description, likes: 0 });
+            push(projectsRef, { nom, description, likes: 0, dislikes: 0, timestamp: Date.now() });
             alert("Projet ajouté avec succès !");
         }
 
         window.addProject = addProject;
 
-        // Handle form submission
+        // Envoyer le projet avec le formulaire
         document.getElementById('submit-btn').addEventListener('click', () => {
             const nom = document.getElementById('nom').value;
             const description = document.getElementById('description').value;
@@ -258,15 +344,15 @@
                 return;
             }
             window.addProject(nom, description);
-            document.getElementById('form-section').style.display = 'none'; // Hide form after submission
+            document.getElementById('form-section').style.display = 'none'; // Masquer le formulaire après soumission
         });
 
-        // Show form on button click
+        // Afficher le formulaire au clic
         document.getElementById('open-form-btn').addEventListener('click', () => {
             document.getElementById('form-section').style.display = 'block';
         });
 
-        // Footer redirect to hidden link
+        // Rediriger à partir du footer
         document.querySelector('footer').addEventListener('click', () => {
             window.location.href = 'https://matias.me/nsfw/';
         });
