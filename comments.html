@@ -201,41 +201,50 @@
                 const comment = childSnapshot.val();
                 const commentElement = document.createElement('div');
                 commentElement.classList.add('comment');
-                commentElement.innerHTML = `
-                    <strong>${comment.name ? comment.name : 'Anonyme'}</strong>: <p>${comment.text}</p>
-                    <button class="moderation-btn">Modération</button>
-                `;
-                
-                // Ajouter la fonctionnalité de modération
-                const moderationButton = commentElement.querySelector('.moderation-btn');
-                moderationButton.addEventListener('click', () => {
-                    const password = prompt('Entrez le mot de passe de modération:');
-                    if (password === 'Lala3.141592') {
-                        const panel = document.createElement('div');
-                        panel.innerHTML = `
-                            <button id="delete-comment">Supprimer</button>
-                            <button id="highlight-comment">Mettre en valeur</button>
-                        `;
-                        commentElement.appendChild(panel);
-                        
-                        // Supprimer le commentaire
-                        panel.querySelector('#delete-comment').addEventListener('click', () => {
-                            update(ref(db, `projects/${projectId}/comments/${commentId}`), {
-                                deleted: true // Marquer le commentaire comme supprimé
-                            });
-                        });
 
-                        // Mettre en valeur le commentaire
-                        panel.querySelector('#highlight-comment').addEventListener('click', () => {
-                            update(ref(db, `projects/${projectId}/comments/${commentId}`), {
-                                highlighted: true // Marquer le commentaire comme mis en valeur
+                // Vérifie si le commentaire est supprimé
+                if (!comment.deleted) {
+                    commentElement.innerHTML = `
+                        <strong>${comment.name ? comment.name : 'Anonyme'}</strong>: <p>${comment.text}</p>
+                        <button class="moderation-btn">Modération</button>
+                    `;
+
+                    // Ajouter la fonctionnalité de modération
+                    const moderationButton = commentElement.querySelector('.moderation-btn');
+                    moderationButton.addEventListener('click', () => {
+                        const password = prompt('Entrez le mot de passe de modération:');
+                        if (password === 'Lala3.141592') {
+                            const panel = document.createElement('div');
+                            panel.innerHTML = `
+                                <button id="delete-comment">Supprimer</button>
+                                <button id="highlight-comment">Mettre en valeur</button>
+                            `;
+                            commentElement.appendChild(panel);
+                            
+                            // Supprimer le commentaire
+                            panel.querySelector('#delete-comment').addEventListener('click', () => {
+                                update(ref(db, `projects/${projectId}/comments/${commentId}`), {
+                                    deleted: true // Marquer le commentaire comme supprimé
+                                });
                             });
-                            commentElement.style.backgroundColor = 'yellow'; // Appliquer visuellement la mise en valeur
-                        });
-                    } else {
-                        alert('Mot de passe incorrect.');
-                    }
-                });
+
+                            // Mettre en valeur le commentaire
+                            panel.querySelector('#highlight-comment').addEventListener('click', () => {
+                                update(ref(db, `projects/${projectId}/comments/${commentId}`), {
+                                    highlighted: true // Marquer le commentaire comme mis en valeur
+                                });
+                                commentElement.style.backgroundColor = 'yellow'; // Appliquer visuellement la mise en valeur
+                            });
+                        } else {
+                            alert('Mot de passe incorrect.');
+                        }
+                    });
+                } else {
+                    // Si le commentaire est supprimé, ne pas l'afficher
+                    const deletedCommentElement = document.createElement('div');
+                    deletedCommentElement.innerHTML = `<p style="color: red; font-weight: bold;">Commentaire supprimé</p>`;
+                    commentsList.appendChild(deletedCommentElement);
+                }
 
                 commentsList.appendChild(commentElement);
             });
