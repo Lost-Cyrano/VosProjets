@@ -148,76 +148,91 @@
        </a>
     </footer>
 
+    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore.js"></script>
+
     <script>
-        // Fonction pour ajouter un projet dans Firestore
-document.getElementById("submitButton").addEventListener("click", function() {
-    let projetText = document.getElementById("projetInput").value;
+    // Configuration Firebase
+    const firebaseConfig = {
+        apiKey: "AIzaSyATBBmuIx94ZrOAY56KUdX2YUdQWbakdJY",
+        authDomain: "vos-projets.firebaseapp.com",
+        projectId: "vos-projets",
+        storageBucket: "vos-projets.appspot.com",
+        messagingSenderId: "12303899246",
+        appId: "1:12303899246:web:b4b069e7082a1279e3647f",
+        measurementId: "G-VK5K6QRW26"
+    };
 
-    if (projetText.trim() !== "") {
-        // Ajouter le projet dans Firestore
-        db.collection("projets").add({
-            texte: projetText,
-            likes: 0
-        })
-        .then(() => {
-            document.getElementById("projetInput").value = "";
-            afficherProjets();  // Réafficher la liste des projets après l'ajout
-        })
-        .catch((error) => {
-            console.error("Erreur lors de l'ajout du projet : ", error);
-        });
-    } else {
-        alert("Veuillez entrer un projet.");
-    }
-});
+    // Initialisation Firebase
+    var app = firebase.initializeApp(firebaseConfig);
+    var db = firebase.firestore();
 
-// Fonction pour afficher les projets depuis Firestore
-function afficherProjets() {
-    let projetsContainer = document.getElementById("projetsContainer");
-    projetsContainer.innerHTML = "";
+    // Soumission d'un nouveau projet
+    document.getElementById("submitButton").addEventListener("click", function() {
+        let projetText = document.getElementById("projetInput").value;
 
-    // Récupérer les projets depuis Firestore
-    db.collection("projets").get().then((querySnapshot) => {
-        querySnapshot.forEach((doc) => {
-            let projet = doc.data();
-            let projetDiv = document.createElement("div");
-            projetDiv.className = "projet";
-            projetDiv.innerHTML = `
-                <p>${projet.texte}</p>
-                <button class="like-button" onclick="likerProjet('${doc.id}', ${projet.likes})">Like (${projet.likes})</button>
-                <button class="delete-button" onclick="supprimerProjet('${doc.id}')">Supprimer</button>
-            `;
-            projetsContainer.appendChild(projetDiv);
-        });
+        if (projetText.trim() !== "") {
+            db.collection("projets").add({
+                texte: projetText,
+                likes: 0
+            }).then(() => {
+                document.getElementById("projetInput").value = "";
+                afficherProjets();
+            }).catch(error => {
+                console.error("Erreur lors de l'ajout du projet : ", error);
+            });
+        } else {
+            alert("Veuillez entrer un projet.");
+        }
     });
-}
 
-// Fonction pour liker un projet et mettre à jour dans Firestore
-function likerProjet(id, currentLikes) {
-    // Mettre à jour le nombre de likes dans Firestore
-    db.collection("projets").doc(id).update({
-        likes: currentLikes + 1
-    }).then(() => {
-        afficherProjets();  // Réafficher les projets après l'update
-    });
-}
+    // Afficher les projets
+    function afficherProjets() {
+        let projetsContainer = document.getElementById("projetsContainer");
+        projetsContainer.innerHTML = "";  
 
-// Fonction pour supprimer un projet dans Firestore
-function supprimerProjet(id) {
-    let password = prompt("Veuillez entrer le mot de passe pour supprimer ce projet :");
-    if (password === "Lala3.141592") {
-        // Supprimer le projet dans Firestore
-        db.collection("projets").doc(id).delete().then(() => {
-            afficherProjets();  // Réafficher la liste des projets après la suppression
+        db.collection("projets").get().then((querySnapshot) => {
+            querySnapshot.forEach((doc) => {
+                let projet = doc.data();
+                let projetDiv = document.createElement("div");
+                projetDiv.className = "projet";
+                projetDiv.innerHTML = `
+                    <p>${projet.texte}</p>
+                    <button class="like-button" onclick="likerProjet('${doc.id}', ${projet.likes})">Like (${projet.likes})</button>
+                    <button class="delete-button" onclick="supprimerProjet('${doc.id}')">Supprimer</button>
+                `;
+                projetsContainer.appendChild(projetDiv);
+            });
         });
-    } else {
-        alert("Mot de passe incorrect.");
     }
-}
 
-// Appel initial pour afficher les projets au chargement de la page
-afficherProjets();
-    </script>
+    // Liker un projet
+    function likerProjet(projetId, currentLikes) {
+        db.collection("projets").doc(projetId).update({
+            likes: currentLikes + 1
+        }).then(() => {
+            afficherProjets();
+        }).catch(error => {
+            console.error("Erreur lors de l'ajout du like : ", error);
+        });
+    }
+
+    // Supprimer un projet avec vérification de mot de passe
+    function supprimerProjet(projetId) {
+        let password = prompt("Veuillez entrer le mot de passe pour supprimer ce projet :");
+        if (password === "Lala3.141592") {
+            db.collection("projets").doc(projetId).delete().then(() => {
+                afficherProjets();
+            }).catch(error => {
+                console.error("Erreur lors de la suppression du projet : ", error);
+            });
+        } else {
+            alert("Mot de passe incorrect.");
+        }
+    }
+
+    // Charger les projets au démarrage
+    afficherProjets();
+</script>
 
 </body>
 </html>
