@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Commentaires du Projet</title>
+    <style>
+        body {
+            margin: 0;
+            font-family: 'Comic Sans MS', sans-serif;
+            background-color: #f0f8ff;
+            text-align: center;
+        }
+
+        header {
+            background-color: #4CAF50;
+            padding: 10px;
+            color: white;
+            font-size: 1.5em;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            z-index: 1000;
+        }
+
+        main {
+            padding-top: 70px;
+            padding-bottom: 60px;
+        }
+
+        footer {
+            text-align: center;
+            padding: 10px;
+            background-color: #eee;
+            color: #666;
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            z-index: 1000;
+            cursor: pointer;
+        }
+
+        .comment-section {
+            max-width: 800px;
+            margin: 20px auto;
+            padding: 20px;
+            background-color: #fff;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .comment-section h2 {
+            color: #4CAF50;
+        }
+
+        .comment {
+            border-bottom: 1px solid #ccc;
+            padding: 10px 0;
+            text-align: left;
+        }
+
+        .add-comment {
+            margin-top: 20px;
+        }
+
+        .add-comment input, .add-comment textarea {
+            width: 100%;
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 10px;
+            border: 1px solid #ccc;
+        }
+
+        .add-comment button {
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 30px;
+            font-size: 1.2em;
+            cursor: pointer;
+        }
+
+        .add-comment button:hover {
+            background-color: #45a049;
+        }
+
+        .back-btn {
+            background-color: #03A9F4;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 30px;
+            font-size: 1em;
+            cursor: pointer;
+            text-decoration: none;
+        }
+
+        .back-btn:hover {
+            background-color: #0288D1;
+        }
+    </style>
+</head>
+<body>
+
+    <header>Commentaires du Projet</header>
+
+    <main>
+        <div class="comment-section">
+            <h2 id="project-title">Titre du projet</h2>
+
+            <div id="comments-list">
+                <!-- Les commentaires seront affichés ici -->
+            </div>
+
+            <div class="add-comment">
+                <h3>Ajouter un commentaire :</h3>
+                <input type="text" id="comment-name" placeholder="Votre nom (optionnel)">
+                <textarea id="comment-text" rows="4" placeholder="Votre commentaire"></textarea>
+                <button id="submit-comment">Envoyer</button>
+            </div>
+
+            <a href="index.html" class="back-btn">Retour aux projets</a>
+        </div>
+    </main>
+
+    <footer>&copy; 2024 Campagne CVL - Tous droits réservés</footer>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.0/firebase-app.js";
+        import { getDatabase, ref, push, onValue } from "https://www.gstatic.com/firebasejs/10.14.0/firebase-database.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyATBBmuIx94ZrOAY56KUdX2YUdQWbakdJY",
+            authDomain: "vos-projets.firebaseapp.com",
+            databaseURL: "https://vos-projets-default-rtdb.europe-west1.firebasedatabase.app",
+            projectId: "vos-projets",
+            storageBucket: "vos-projets.appspot.com",
+            messagingSenderId: "12303899246",
+            appId: "1:12303899246:web:b4b069e7082a1279e3647f",
+            measurementId: "G-VK5K6QRW26"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+
+        const projectId = new URLSearchParams(window.location.search).get('projectId');
+
+        if (!projectId) {
+            alert('Projet non trouvé');
+            window.location.href = 'index.html';
+        }
+
+        const commentsRef = ref(db, `projects/${projectId}/comments`);
+        const projectTitleElement = document.getElementById('project-title');
+        const commentsList = document.getElementById('comments-list');
+
+        // Charger les commentaires
+        onValue(commentsRef, (snapshot) => {
+            commentsList.innerHTML = '';
+            snapshot.forEach((childSnapshot) => {
+                const comment = childSnapshot.val();
+                const commentElement = document.createElement('div');
+                commentElement.classList.add('comment');
+                commentElement.innerHTML = `
+                    <strong>${comment.name ? comment.name : 'Anonyme'}</strong>: ${comment.text}
+                `;
+                commentsList.appendChild(commentElement);
+            });
+        });
+
+        // Soumettre un commentaire
+        document.getElementById('submit-comment').addEventListener('click', () => {
+            const name = document.getElementById('comment-name').value;
+            const text = document.getElementById('comment-text').value;
+            if (text.trim() === "") {
+                alert('Le commentaire ne peut pas être vide.');
+                return;
+            }
+            push(commentsRef, { name, text });
+            document.getElementById('comment-name').value = '';
+            document.getElementById('comment-text').value = '';
+        });
+    </script>
+
+</body>
+</html>
