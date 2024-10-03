@@ -149,31 +149,30 @@
     </footer>
 
     <script>
-        document.getElementById("projetButton").addEventListener("click", function() {
-            document.getElementById("projetForm").classList.toggle("hidden");
-        });
+        // Fonction pour ajouter un projet dans Firestore
+document.getElementById("submitButton").addEventListener("click", function() {
+    let projetText = document.getElementById("projetInput").value;
 
-        document.getElementById("submitButton").addEventListener("click", function() {
-            let projetText = document.getElementById("projetInput").value;
-
-            if (projetText.trim() !== "") {
-                db.collection("projets").add({
-                    texte: projetText,
-                    likes: 0
+    if (projetText.trim() !== "") {
+        // Ajouter le projet dans Firestore
+        db.collection("projets").add({
+            texte: projetText,
+            likes: 0
         })
-                .then(() => {
-                    document.getElementById("projetInput").value = "";
-                    afficherProjets(); //Réafficher la liste des projets
-                })
-                .catch((error) => {
-                    console.error("Erreur lors de l'ajout du projet :", error);
-                }));
-            } else {
-                alert("Veuillez entrer un projet.");
-            }
+        .then(() => {
+            document.getElementById("projetInput").value = "";
+            afficherProjets();  // Réafficher la liste des projets après l'ajout
+        })
+        .catch((error) => {
+            console.error("Erreur lors de l'ajout du projet : ", error);
         });
+    } else {
+        alert("Veuillez entrer un projet.");
+    }
+});
 
-        function afficherProjets() {
+// Fonction pour afficher les projets depuis Firestore
+function afficherProjets() {
     let projetsContainer = document.getElementById("projetsContainer");
     projetsContainer.innerHTML = "";
 
@@ -193,7 +192,8 @@
     });
 }
 
-        function likerProjet(id, currentLikes) {
+// Fonction pour liker un projet et mettre à jour dans Firestore
+function likerProjet(id, currentLikes) {
     // Mettre à jour le nombre de likes dans Firestore
     db.collection("projets").doc(id).update({
         likes: currentLikes + 1
@@ -202,7 +202,8 @@
     });
 }
 
-        function supprimerProjet(id) {
+// Fonction pour supprimer un projet dans Firestore
+function supprimerProjet(id) {
     let password = prompt("Veuillez entrer le mot de passe pour supprimer ce projet :");
     if (password === "Lala3.141592") {
         // Supprimer le projet dans Firestore
@@ -214,7 +215,8 @@
     }
 }
 
-        afficherProjets();
+// Appel initial pour afficher les projets au chargement de la page
+afficherProjets();
     </script>
 
 </body>
