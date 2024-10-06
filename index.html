@@ -98,15 +98,38 @@
             background-color: #03A9F4;
             color: white;
         }
+        
+        /* Style plus discret pour le bouton modération */
+.moderator-btn {
+    background-color: #888; /* Couleur grise discrète */
+    color: white;
+    font-size: 0.8em; /* Réduction de la taille de la police */
+    opacity: 0.3; /* Rendre le bouton plus discret */
+    position: absolute;
+    bottom: 10px;
+    right: 10px; /* Place le bouton en bas à droite */
+    padding: 5px 10px; /* Taille du bouton ajustée */
+    transition: opacity 0.3s ease, background-color 0.3s ease;
+    z-index: 10; /* Assure que le bouton ne chevauche pas d'autres éléments */
+}
 
-        .moderator-btn {
-            background-color: #888;
-            color: white;
-            font-size: 0.8em;
-            position: absolute;
-            bottom: 10px;
-            right: 10px;
-        }
+/* Au survol du projet, le bouton devient plus visible */
+.project:hover .moderator-btn {
+    opacity: 1;
+    background-color: #666; /* Change légèrement la couleur au survol */
+}
+
+/* Ajustements pour éviter les chevauchements sur mobile */
+@media (max-width: 768px) {
+    .moderator-btn {
+        opacity: 1; /* Rendre le bouton visible mais discret sur mobile */
+        position: relative; /* Évite le positionnement absolu sur mobile */
+        bottom: auto;
+        right: auto;
+        margin-top: 10px; /* Ajouter un espace par rapport au contenu */
+    }
+}
+
 
         .form-section {
             background-color: #e0f7fa;
