@@ -261,9 +261,17 @@
         <!-- Formulaire pour ajouter un projet -->
         <div class="form-section" id="form-section">
             <h2>Proposer un Projet</h2>
-            <label for="nom">Nom (optionnel):</label>
-            <input type="text" id="nom" placeholder="Votre nom (laisser vide pour anonyme)">
+
+            <!-- Champ pour le nom du créateur (remplace l'ancien champ "nom") -->
+            <label for="creator">Votre nom (optionnel):</label>
+            <input type="text" id="creator" placeholder="Votre nom (laisser vide pour anonyme)">
+            <br> 
+
+            <!-- Nouveau champ pour le nom du projet -->
+            <label for="nom-projet">Nom du projet:</label>
+            <input type="text" id="nom-projet" placeholder="Nom du projet">
             <br>
+
             <label for="description">Description du projet:</label>
             <textarea id="description" rows="4" cols="50" placeholder="Expliquez votre projet..."></textarea>
             <br>
@@ -337,7 +345,7 @@
                 projectElement.classList.add('project');
                 projectElement.innerHTML = `
                     <strong>${project.nom ? project.nom : 'Anonyme'}</strong><br>
-                    <div class="project-creator">${project.creator ? project.creator : 'Anonyme'}</div>
+                    <div class="project-creator"><em>${project.creator ? project.creator : 'Anonyme'}</em></div>
                     <div class="project-description">${project.description}</div>
                     <button class="toggle-description-btn">Afficher plus</button>
                     ${project.favori ? '<span class="badge badge-fav">Favori</span>' : ''}
@@ -464,9 +472,9 @@
         });
 
         // Ajouter un projet à Firebase
-        function addProject(nom, description) {
+        function addProject(nom, creator, description) {
             const projectsRef = ref(db, 'projects/');
-            push(projectsRef, { nom, description, likes: 0, dislikes: 0, favori: false, approuve: false, timestamp: Date.now() });
+            push(projectsRef, { nom, creator, description, likes: 0, dislikes: 0, favori: false, approuve: false, timestamp: Date.now() });
             alert("Projet ajouté avec succès !");
         }
 
@@ -474,13 +482,18 @@
 
         // Envoyer le projet avec le formulaire
         document.getElementById('submit-btn').addEventListener('click', () => {
-            const nom = document.getElementById('nom').value;
+            const nom = document.getElementById('nom-projet').value;
+            const creator = document.getElementByID('creator').value;
             const description = document.getElementById('description').value;
             if (description.trim() === "") {
                 alert("Veuillez ajouter une description du projet.");
                 return;
             }
-            window.addProject(nom, description);
+            if (nom.trim() === "") {
+                alert("Veuillez ajouter une description du projet.");
+                return;
+            }
+            window.addProject(nom, creator, description);
             document.getElementById('form-section').style.display = 'none'; // Masquer le formulaire après soumission
         });
 
