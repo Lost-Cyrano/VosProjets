@@ -337,6 +337,7 @@
                 projectElement.classList.add('project');
                 projectElement.innerHTML = `
                     <strong>${project.nom ? project.nom : 'Anonyme'}</strong><br>
+                    <div class="project-creator">${project.creator ? project.creator : 'Anonyme'}</div>
                     <div class="project-description">${project.description}</div>
                     <button class="toggle-description-btn">Afficher plus</button>
                     ${project.favori ? '<span class="badge badge-fav">Favori</span>' : ''}
